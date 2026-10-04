@@ -1,0 +1,227 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Semantic design tokens. Components only ever use these names (bg-background,
+ * text-muted-foreground, border-border…), never raw palette colors.
+ */
+:root {
+  --background: oklch(0.99 0.004 95);
+  --foreground: oklch(0.22 0.02 260);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+  --muted: oklch(0.955 0.007 260);
+  --muted-foreground: oklch(0.48 0.02 260);
+  --primary: oklch(0.5 0.15 262);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.94 0.02 262);
+  --secondary-foreground: oklch(0.3 0.06 262);
+  --border: oklch(0.9 0.008 260);
+  --input: oklch(0.86 0.01 260);
+  --ring: oklch(0.55 0.15 262);
+  --success: oklch(0.52 0.13 155);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.62 0.15 70);
+  --warning-foreground: oklch(0.2 0.02 70);
+  --error: oklch(0.55 0.2 27);
+  --error-foreground: oklch(0.99 0 0);
+  --overlay: oklch(0.15 0.02 260 / 0.45);
+  --highlight: oklch(0.9 0.08 95);
+}
+
+.dark {
+  --background: oklch(0.17 0.012 260);
+  --foreground: oklch(0.93 0.008 260);
+  --card: oklch(0.205 0.014 260);
+  --popover: oklch(0.22 0.015 260);
+  --muted: oklch(0.26 0.014 260);
+  --muted-foreground: oklch(0.7 0.015 260);
+  --primary: oklch(0.72 0.13 262);
+  --primary-foreground: oklch(0.17 0.03 262);
+  --secondary: oklch(0.28 0.03 262);
+  --secondary-foreground: oklch(0.88 0.03 262);
+  --border: oklch(0.3 0.012 260);
+  --input: oklch(0.35 0.014 260);
+  --ring: oklch(0.72 0.13 262);
+  --success: oklch(0.72 0.14 155);
+  --success-foreground: oklch(0.17 0.03 155);
+  --warning: oklch(0.8 0.14 75);
+  --error: oklch(0.7 0.17 25);
+  --error-foreground: oklch(0.17 0.03 25);
+  --overlay: oklch(0 0 0 / 0.6);
+  --highlight: oklch(0.42 0.08 95);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-overlay: var(--overlay);
+  --color-highlight: var(--highlight);
+}
+
+@theme {
+  /* Breakpoints (mirrored in shared/config/breakpoints.ts) */
+  --breakpoint-sm: 40rem; /* 640px tablet */
+  --breakpoint-lg: 64rem; /* 1024px desktop */
+  --breakpoint-2xl: 90rem; /* 1440px large desktop */
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Literata', 'Iowan Old Style', 'Georgia', ui-serif, serif;
+
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-fade-out: fade-out 120ms ease-in;
+  --animate-scale-in: scale-in 160ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  --animate-slide-up: slide-up 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  --animate-slide-left: slide-left 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  --animate-slide-right: slide-right 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  --animate-indeterminate: indeterminate 1.2s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes slide-left {
+    from {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes slide-right {
+    from {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes indeterminate {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
+}
+
+/* Fluid typography: scales smoothly between phone and large monitor. */
+@utility text-fluid-2xl {
+  font-size: clamp(1.5rem, 1.25rem + 1vw, 1.875rem);
+}
+@utility text-fluid-3xl {
+  font-size: clamp(1.625rem, 1.3rem + 1.4vw, 2.25rem);
+}
+@utility text-fluid-4xl {
+  font-size: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--color-primary) 25%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.select-chevron {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* ---------- Reader typography ---------- */
+.reader-prose {
+  font-family: var(--reader-font, var(--font-serif));
+  font-size: var(--reader-font-size, 1.125rem);
+  line-height: var(--reader-line-height, 1.75);
+  max-width: var(--reader-width, 68ch);
+  margin-inline: auto;
+  width: 100%;
+  overflow-wrap: break-word;
+  /* No auto-hyphenation: a split word would be harder to tap and read. */
+  hyphens: manual;
+}
+.reader-paragraph {
+  margin-block-end: 1.1em;
+  scroll-margin-top: 5rem;
+  /* Off-screen paragraphs skip layout/paint: cheap "virtualization" for long documents. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 8em;
+}
+.reader-word {
+  cursor: pointer;
+  border-radius: 0.2em;
+  transition: background-color 120ms;
+  -webkit-tap-highlight-color: transparent;
+}
+.reader-word:hover {
+  background-color: var(--color-muted);
+}
+.reader-word:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 1px;
+}
+/* Saved words: underline (shape) in addition to color, so state isn't color-only. */
+.reader-word[data-saved] {
+  text-decoration: underline dotted var(--color-primary);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
+}
+.reader-word[aria-pressed='true'] {
+  background-color: var(--color-highlight);
+  box-shadow: 0 0 0 2px var(--color-highlight);
+}

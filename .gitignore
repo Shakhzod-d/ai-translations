@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+*.log
+.DS_Store
+
+# Secrets: real keys go in .env.local (dev) or Vercel project settings (prod)
+.env*.local
+
+# Local tooling
+.vercel
+.claude
