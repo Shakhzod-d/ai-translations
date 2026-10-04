@@ -1,4 +1,4 @@
-import { handleGeminiProxy, isSameOrigin } from '../../server/gemini-proxy';
+import { handleGeminiProxy, isSameOrigin } from '../../server/gemini-proxy.js';
 
 /** Vercel Function: POST /api/ai/gemini. Set GEMINI_API_KEY in the Vercel project settings. */
 export async function POST(request: Request): Promise<Response> {
