@@ -12,7 +12,9 @@ interface ArticleHeaderProps {
   compare: boolean;
   canCompare: boolean;
   onCompareChange: (value: boolean) => void;
-  /** Slot for the version selector and other page-level controls. */
+  /** The "tap any word" hint; only meaningful while reading. */
+  showHint?: boolean;
+  /** Slot for the mode switch, version selector and other page-level controls. */
   children?: React.ReactNode;
 }
 
@@ -21,6 +23,7 @@ export const ArticleHeader = ({
   compare,
   canCompare,
   onCompareChange,
+  showHint = true,
   children,
 }: ArticleHeaderProps) => {
   const { t } = useTranslation();
@@ -46,6 +49,9 @@ export const ArticleHeader = ({
           <Clock aria-hidden /> {t('documents.minutes', { count: metadata.readingMinutes })}
         </Badge>
         <span>{t('documents.words', { count: metadata.wordCount })}</span>
+        {metadata.source && (
+          <Badge variant="primary">{t('reader.source', { source: metadata.source })}</Badge>
+        )}
       </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 flex-1">{children}</div>
@@ -61,7 +67,7 @@ export const ArticleHeader = ({
           </Button>
         )}
       </div>
-      <p className="text-muted-foreground text-sm">{t('reader.hint')}</p>
+      {showHint && <p className="text-muted-foreground text-sm">{t('reader.hint')}</p>}
     </header>
   );
 };

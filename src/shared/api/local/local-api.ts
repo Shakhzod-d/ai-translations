@@ -11,6 +11,7 @@ import {
   safeStorage,
 } from '@/shared/lib';
 import { isAiConfigured } from '../ai/ai-settings';
+import { generateExercisesWithAi } from '../ai/exercises';
 import {
   analyzeDocument,
   analyzeWordWithAi,
@@ -24,6 +25,7 @@ import {
   type Article,
   type ArticleSummary,
   type ArticleVersion,
+  type ExerciseSet,
   type FileType,
   type ProcessingJob,
   type ProcessingStage,
@@ -78,8 +80,8 @@ const buildVersion = (
   content: { paragraphs: paragraphs.map((text, i) => ({ id: paragraphId(articleId, i), text })) },
 });
 
-const sortVersions = (versions: ArticleVersion[]) =>
-  [...versions].sort(
+const sortByLevel = <T extends { level?: CefrLevel }>(items: T[]) =>
+  [...items].sort(
     (a, b) =>
       (a.level ? CEFR_LEVELS.indexOf(a.level) : -1) - (b.level ? CEFR_LEVELS.indexOf(b.level) : -1),
   );
@@ -112,43 +114,78 @@ export const createLocalApis = (): { articles: ArticlesApi; vocabulary: Vocabula
   };
   const saveArticle = (article: Article) => idb.set('articles', article.id, article);
 
-  const processFile = async (jobId: string, file: File) => {
+  interface Source {
+    text: string;
+    type: FileType;
+    fileName: string;
+    fileSize: number;
+    /** The original upload, kept so it can be downloaded again. Absent for pasted text. */
+    file?: File;
+    title?: string;
+    source?: string;
+  }
+
+  interface PipelineOptions {
+    level: CefrLevel;
+    withExercises: boolean;
+  }
+
+  /** Shared by file uploads and pasted text, so both produce identical documents. */
+  const process = async (
+    jobId: string,
+    load: () => Promise<Source>,
+    { level: targetLevel, withExercises }: PipelineOptions,
+  ) => {
     const setStage = (stage: ProcessingStage) =>
       jobs.set(jobId, { id: jobId, status: 'processing', stage });
     try {
       setStage('extracting');
-      const { text, type } = await extractText(file);
+      const input = await load();
+      const { text } = input;
       const paragraphs = splitParagraphs(text);
       const id = createId('art');
       const wordCount = countWords(text);
 
       // Heuristic defaults; replaced by AI results when a key is configured.
       let title =
-        paragraphs[0] && paragraphs[0].length < 90
+        input.title ??
+        (paragraphs[0] && paragraphs[0].length < 90
           ? paragraphs[0]
-          : file.name.replace(/\.[^.]+$/, '');
+          : input.fileName.replace(/\.[^.]+$/, ''));
       let language = 'en';
       let level = estimateLevel(text);
       let phrasalVerbs = detectPhrasalVerbs(text);
       const versions = [buildVersion(id, paragraphs)];
+      const exercises: ExerciseSet[] = [];
 
       if (isAiConfigured()) {
         // AI failures never lose the document: it is saved with what succeeded,
-        // and missing versions can be generated later from the reader.
+        // and missing versions and exercises can be generated later from the reader.
         setStage('analyzing');
         try {
-          const analysis = await analyzeDocument(text, file.name);
-          ({ title, language, level, phrasalVerbs } = analysis);
+          const analysis = await analyzeDocument(text, input.fileName);
+          ({ language, level, phrasalVerbs } = analysis);
+          if (!input.title) title = analysis.title;
         } catch (error) {
           console.error('[ai] document analysis failed', error);
         }
         setStage('simplifying');
+        let leveled: string[] | null = null;
         try {
-          versions.push(
-            buildVersion(id, await simplifyParagraphs(paragraphs, INITIAL_LEVEL), INITIAL_LEVEL),
-          );
+          leveled = await simplifyParagraphs(paragraphs, targetLevel);
+          versions.push(buildVersion(id, leveled, targetLevel));
         } catch (error) {
           console.error('[ai] simplification failed', error);
+        }
+        if (withExercises) {
+          setStage('exercises');
+          try {
+            exercises.push(
+              await generateExercisesWithAi((leveled ?? paragraphs).join('\n\n'), targetLevel),
+            );
+          } catch (error) {
+            console.error('[ai] exercise generation failed', error);
+          }
         }
       }
 
@@ -161,25 +198,29 @@ export const createLocalApis = (): { articles: ArticlesApi; vocabulary: Vocabula
         versions,
         vocabulary: [],
         phrasalVerbs,
+        exercises,
         metadata: {
-          fileName: file.name,
-          fileType: type satisfies FileType,
-          fileSize: file.size,
+          fileName: input.fileName,
+          fileType: input.type,
+          fileSize: input.fileSize,
           wordCount,
           readingMinutes: estimateReadingMinutes(wordCount),
           estimatedLevel: level,
           favorite: false,
           progress: 0,
+          source: input.source,
         },
         createdAt: new Date().toISOString(),
       };
 
       setStage('finalizing');
-      await idb.set('files', id, {
-        name: file.name,
-        type: file.type,
-        blob: file,
-      } satisfies StoredFile);
+      if (input.file) {
+        await idb.set('files', id, {
+          name: input.file.name,
+          type: input.file.type,
+          blob: input.file,
+        } satisfies StoredFile);
+      }
       await saveArticle(article);
       jobs.set(jobId, { id: jobId, status: 'completed', articleId: id });
     } catch (error) {
@@ -187,6 +228,23 @@ export const createLocalApis = (): { articles: ArticlesApi; vocabulary: Vocabula
       const errorCode = error instanceof ExtractionError ? error.code : 'UNKNOWN';
       jobs.set(jobId, { id: jobId, status: 'failed', errorCode });
     }
+  };
+
+  const startJob = (run: (jobId: string) => Promise<void>) => {
+    const jobId = createId('job');
+    jobs.set(jobId, { id: jobId, status: 'processing', stage: 'uploading' });
+    void run(jobId);
+    return jobs.get(jobId)!;
+  };
+
+  /** Text the exercises are written from: the version at that level when it exists. */
+  const textForLevel = (article: Article, level: CefrLevel) => {
+    const version =
+      article.versions.find((v) => v.level === level) ??
+      article.versions.find((v) => v.type === 'original');
+    return version
+      ? version.content.paragraphs.map((p) => p.text).join('\n\n')
+      : article.originalText;
   };
 
   const articles: ArticlesApi = {
@@ -199,10 +257,35 @@ export const createLocalApis = (): { articles: ArticlesApi; vocabulary: Vocabula
       if (options?.signal?.aborted) throw new ApiError('ABORTED');
       // Files never leave the device, so "upload" is reading into memory.
       options?.onProgress?.(1);
-      const jobId = createId('job');
-      jobs.set(jobId, { id: jobId, status: 'processing', stage: 'uploading' });
-      void processFile(jobId, file);
-      return jobs.get(jobId)!;
+      return startJob((jobId) =>
+        process(
+          jobId,
+          async () => {
+            const { text, type } = await extractText(file);
+            return { text, type, fileName: file.name, fileSize: file.size, file };
+          },
+          { level: INITIAL_LEVEL, withExercises: false },
+        ),
+      );
+    },
+    async importText(input, signal) {
+      if (signal?.aborted) throw new ApiError('ABORTED');
+      const text = input.text.trim();
+      if (!text) throw new ApiError('VALIDATION');
+      return startJob((jobId) =>
+        process(
+          jobId,
+          async () => ({
+            text,
+            type: 'txt',
+            fileName: `${input.title?.trim() || 'Pasted text'}.txt`,
+            fileSize: new Blob([text]).size,
+            title: input.title?.trim() || undefined,
+            source: input.source?.trim() || undefined,
+          }),
+          { level: input.level, withExercises: input.withExercises },
+        ),
+      );
     },
     async getProcessingJob(jobId) {
       const job = jobs.get(jobId);
@@ -232,12 +315,23 @@ export const createLocalApis = (): { articles: ArticlesApi; vocabulary: Vocabula
       const version = buildVersion(article.id, await simplifyParagraphs(paragraphs, level), level);
       // Re-read: another generation may have finished meanwhile.
       const latest = await getArticle(articleId);
-      latest.versions = sortVersions([
+      latest.versions = sortByLevel([
         ...latest.versions.filter((v) => v.id !== version.id),
         version,
       ]);
       await saveArticle(latest);
       return version;
+    },
+    async generateExercises(articleId, level) {
+      const set = await generateExercisesWithAi(
+        textForLevel(await getArticle(articleId), level),
+        level,
+      );
+      // Re-read: the article may have changed while the AI was working.
+      const latest = await getArticle(articleId);
+      latest.exercises = sortByLevel([...latest.exercises.filter((e) => e.level !== level), set]);
+      await saveArticle(latest);
+      return set;
     },
     async translateText(text, target, signal, context) {
       if (target === 'en' && /^[\p{Script=Latin}\s\p{P}\d]+$/u.test(text))

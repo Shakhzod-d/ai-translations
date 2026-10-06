@@ -91,3 +91,27 @@ describe('ReaderPage', () => {
     expect(await screen.findByText(/doesn't exist or was deleted/i)).toBeInTheDocument();
   });
 });
+
+describe('ReaderPage exercises', () => {
+  beforeEach(mockDesktop);
+
+  it('creates exercises, checks answers and shows the score', async () => {
+    await renderReader();
+    await userEvent.click(await screen.findByRole('radio', { name: 'Exercises' }));
+    expect(screen.getByRole('radio', { name: 'B1' })).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(screen.getByRole('button', { name: 'Create A2 exercises' }));
+
+    const mc = await screen.findByRole('heading', { name: 'Multiple choice' });
+    expect(mc).toBeInTheDocument();
+    const gap = screen.getByRole('textbox', { name: 'Gap 1' });
+    await userEvent.type(gap, 'definitely wrong');
+    await userEvent.click(screen.getByRole('button', { name: 'Check answers' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(/of \d+ correct/);
+    expect(gap).toHaveAttribute('readonly');
+    expect(screen.getAllByText(/^Answer:/).length).toBeGreaterThan(0);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(screen.getByRole('textbox', { name: 'Gap 1' })).toHaveValue('');
+  });
+});

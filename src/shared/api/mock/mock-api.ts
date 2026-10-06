@@ -23,6 +23,7 @@ import { ApiError } from '../errors';
 import type { ArticlesApi, VocabularyApi } from '../types';
 import { detectPhrasalVerbs, lookup, PHRASAL_VERBS } from './dictionary';
 import { ExtractionError, extractText } from '../extraction/extract';
+import { buildMockExercises } from './exercises';
 import { SEED_ARTICLE } from './seed';
 import { estimateLevel, simplifyParagraph } from './simplify';
 
@@ -96,6 +97,7 @@ const buildArticle = (
     ],
     vocabulary: [],
     phrasalVerbs: detectPhrasalVerbs(text),
+    exercises: [],
     metadata: {
       fileName,
       fileType,
@@ -156,17 +158,22 @@ export const createMockApis = ({ latency = LATENCY_MS, persist = true } = {}): {
     return article;
   };
 
-  const runJob = async (jobId: string, file: File) => {
+  const runJob = async (
+    jobId: string,
+    load: () => Promise<{ text: string; type: FileType; name: string; size: number }>,
+    customize: (article: Article) => void = () => undefined,
+  ) => {
     const setStage = (stage: ProcessingStage) =>
       jobs.set(jobId, { id: jobId, status: 'processing', stage });
     try {
       setStage('extracting');
-      const { text, type } = await extractText(file);
+      const { text, type, name, size } = await load();
       for (const stage of ['analyzing', 'simplifying', 'vocabulary', 'finalizing'] as const) {
         await delay(latency * 2);
         setStage(stage);
       }
-      const article = buildArticle(text, file.name, type, file.size);
+      const article = buildArticle(text, name, type, size);
+      customize(article);
       db.articles.unshift(article);
       save();
       jobs.set(jobId, { id: jobId, status: 'completed', articleId: article.id });
@@ -196,7 +203,30 @@ export const createMockApis = ({ latency = LATENCY_MS, persist = true } = {}): {
       }
       const jobId = createId('job');
       jobs.set(jobId, { id: jobId, status: 'processing', stage: 'uploading' });
-      void runJob(jobId, file);
+      void runJob(jobId, async () => ({
+        ...(await extractText(file)),
+        name: file.name,
+        size: file.size,
+      }));
+      return jobs.get(jobId)!;
+    },
+    async importText(input, signal) {
+      await wait(signal);
+      const text = input.text.trim();
+      if (!text) throw new ApiError('VALIDATION');
+      const jobId = createId('job');
+      jobs.set(jobId, { id: jobId, status: 'processing', stage: 'uploading' });
+      void runJob(
+        jobId,
+        async () => ({ text, type: 'txt', name: 'Pasted text.txt', size: text.length }),
+        (article) => {
+          if (input.title?.trim()) article.title = input.title.trim();
+          article.metadata.source = input.source?.trim() || undefined;
+          const leveled = buildVersion(article.id, splitParagraphs(text), input.level);
+          article.versions = [article.versions[0]!, leveled];
+          if (input.withExercises) article.exercises = [buildMockExercises(text, input.level)];
+        },
+      );
       return jobs.get(jobId)!;
     },
     async getProcessingJob(jobId, signal) {
@@ -235,6 +265,14 @@ export const createMockApis = ({ latency = LATENCY_MS, persist = true } = {}): {
       );
       save();
       return version;
+    },
+    async generateExercises(articleId, level) {
+      await delay(latency * 4);
+      const article = findArticle(articleId);
+      const set = buildMockExercises(article.originalText, level);
+      article.exercises = [...article.exercises.filter((e) => e.level !== level), set];
+      save();
+      return set;
     },
     async translateText(text, target: LanguageCode, signal) {
       await wait(signal);
