@@ -47,6 +47,8 @@ export const articleMetadataSchema = z.object({
   favorite: z.boolean(),
   lastOpenedAt: z.string().optional(),
   progress: z.number().min(0).max(1).optional(),
+  /** Where pasted text came from, e.g. "COCA" or a citation. Shown to readers and in exports. */
+  source: z.string().optional(),
 });
 
 export const phrasalVerbSchema = z.object({
@@ -70,6 +72,51 @@ export const vocabularyItemSchema = z.object({
   createdAt: z.string(),
 });
 
+/**
+ * Reading-comprehension exercises for one CEFR level of an article. Task types mirror
+ * common coursebook formats: multiple choice, gap filling, term–definition matching and
+ * open questions (self-checked against a sample answer).
+ */
+export const multipleChoiceTaskSchema = z.object({
+  id: z.string(),
+  question: z.string(),
+  options: z.array(z.string()).min(2),
+  answerIndex: z.number().int().nonnegative(),
+  explanation: z.string().optional(),
+});
+
+/** The sentence is stored split around the gap so rendering never has to parse markers. */
+export const gapFillTaskSchema = z.object({
+  id: z.string(),
+  before: z.string(),
+  after: z.string(),
+  answer: z.string(),
+  /** Other answers that are also correct (e.g. "kids" for "children"). */
+  alternatives: z.array(z.string()).default([]),
+});
+
+export const matchingTaskSchema = z.object({
+  id: z.string(),
+  term: z.string(),
+  definition: z.string(),
+});
+
+export const openQuestionTaskSchema = z.object({
+  id: z.string(),
+  question: z.string(),
+  sampleAnswer: z.string(),
+});
+
+export const exerciseSetSchema = z.object({
+  id: z.string(),
+  level: cefrLevelSchema,
+  createdAt: z.string(),
+  multipleChoice: z.array(multipleChoiceTaskSchema),
+  gapFill: z.array(gapFillTaskSchema),
+  matching: z.array(matchingTaskSchema),
+  openQuestions: z.array(openQuestionTaskSchema),
+});
+
 export const articleSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -78,6 +125,8 @@ export const articleSchema = z.object({
   versions: z.array(articleVersionSchema),
   vocabulary: z.array(vocabularyItemSchema),
   phrasalVerbs: z.array(phrasalVerbSchema),
+  /** One set per level at most. Absent on documents created before exercises existed. */
+  exercises: z.array(exerciseSetSchema).default([]),
   metadata: articleMetadataSchema,
   createdAt: z.string(),
 });
@@ -98,6 +147,7 @@ export const PROCESSING_STAGES = [
   'analyzing',
   'simplifying',
   'vocabulary',
+  'exercises',
   'finalizing',
 ] as const;
 export const processingStageSchema = z.enum(PROCESSING_STAGES);
@@ -151,9 +201,25 @@ export type Article = z.infer<typeof articleSchema>;
 export type ArticleSummary = z.infer<typeof articleSummarySchema>;
 export type ProcessingStage = z.infer<typeof processingStageSchema>;
 export type ProcessingJob = z.infer<typeof processingJobSchema>;
+export type MultipleChoiceTask = z.infer<typeof multipleChoiceTaskSchema>;
+export type GapFillTask = z.infer<typeof gapFillTaskSchema>;
+export type MatchingTask = z.infer<typeof matchingTaskSchema>;
+export type OpenQuestionTask = z.infer<typeof openQuestionTaskSchema>;
+export type ExerciseSet = z.infer<typeof exerciseSetSchema>;
 export type WordSense = z.infer<typeof wordSenseSchema>;
 export type WordAnalysis = z.infer<typeof wordAnalysisSchema>;
 export type Translation = z.infer<typeof translationSchema>;
+
+/** Text pasted by the user (e.g. a passage copied from BNC or COCA). */
+export const textImportSchema = z.object({
+  text: z.string(),
+  title: z.string().optional(),
+  source: z.string().optional(),
+  /** Level of the simplified version generated on import (and of its exercises). */
+  level: cefrLevelSchema,
+  withExercises: z.boolean(),
+});
+export type TextImport = z.infer<typeof textImportSchema>;
 
 export type NewVocabularyItem = Omit<VocabularyItem, 'id' | 'createdAt'>;
 export type ArticlePatch = Partial<Pick<Article, 'title'>> & {

@@ -24,7 +24,20 @@ vi.mock('../ai/tasks', () => ({
   translateWithAi: vi.fn(async () => 'перевод'),
 }));
 
+vi.mock('../ai/exercises', () => ({
+  generateExercisesWithAi: vi.fn(async (text: string, level: string) => ({
+    id: `ex-${level}-${text.length}`,
+    level,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    multipleChoice: [],
+    gapFill: [],
+    matching: [],
+    openQuestions: [{ id: 'o1', question: text.slice(0, 20), sampleAnswer: '' }],
+  })),
+}));
+
 const tasks = await import('../ai/tasks');
+const exerciseTasks = await import('../ai/exercises');
 
 const waitForJob = async (api: ReturnType<typeof createLocalApis>['articles'], jobId: string) => {
   for (let i = 0; i < 100; i++) {
@@ -86,5 +99,53 @@ describe('local adapter', () => {
     expect(
       (await vocabulary.listWords()).filter((w) => w.word.toLowerCase() === 'unique'),
     ).toHaveLength(1);
+  });
+
+  it('imports pasted text at the chosen level, with exercises written from that version', async () => {
+    const { articles } = createLocalApis();
+    vi.mocked(exerciseTasks.generateExercisesWithAi).mockClear();
+    const job = await waitForJob(
+      articles,
+      (
+        await articles.importText({
+          text: 'Padel is new.\n\nPeople love it.',
+          title: 'New sports',
+          source: 'COCA',
+          level: 'A2',
+          withExercises: true,
+        })
+      ).id,
+    );
+    const article = await articles.getArticle(job.status === 'completed' ? job.articleId : '');
+    expect(article.title).toBe('New sports'); // the user's title wins over the AI's
+    expect(article.metadata.source).toBe('COCA');
+    expect(article.versions.map((v) => v.id)).toEqual(['original', 'simplified-a2']);
+    expect(article.exercises.map((e) => e.level)).toEqual(['A2']);
+    expect(exerciseTasks.generateExercisesWithAi).toHaveBeenCalledWith(
+      '[A2] Padel is new.\n\n[A2] People love it.',
+      'A2',
+    );
+  });
+
+  it('replaces the exercise set of a level instead of adding another', async () => {
+    const { articles } = createLocalApis();
+    const job = await waitForJob(articles, (await articles.uploadArticle(textFile('One.'))).id);
+    const id = job.status === 'completed' ? job.articleId : '';
+    expect((await articles.getArticle(id)).exercises).toEqual([]);
+    await articles.generateExercises(id, 'B1');
+    await articles.generateExercises(id, 'A2');
+    await articles.generateExercises(id, 'B1');
+    expect((await articles.getArticle(id)).exercises.map((e) => e.level)).toEqual(['A2', 'B1']);
+  });
+
+  it('reads documents saved before exercises existed', async () => {
+    const { articles } = createLocalApis();
+    const job = await waitForJob(articles, (await articles.uploadArticle(textFile('Old.'))).id);
+    const id = job.status === 'completed' ? job.articleId : '';
+    const { idb } = await import('@/shared/lib');
+    const stored = (await idb.get<Record<string, unknown>>('articles', id))!;
+    delete stored.exercises;
+    await idb.set('articles', id, stored);
+    expect((await articles.getArticle(id)).exercises).toEqual([]);
   });
 });

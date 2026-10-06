@@ -1,23 +1,27 @@
 import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { PROCESSING_STAGES, type ProcessingStage } from '@/shared/api';
+import type { ProcessingStage } from '@/shared/api';
 import { cn } from '@/shared/lib';
 import { Progress, Spinner } from '@/shared/ui';
+import { UPLOAD_STAGES } from '../model/processing';
 
 /** Reusable processing-state indicator: overall progress + stage checklist. */
 export const ProcessingSteps = ({
   stage,
   uploadProgress,
+  stages = UPLOAD_STAGES,
 }: {
   stage: ProcessingStage;
   uploadProgress?: number;
+  /** The stages this job goes through, in order. */
+  stages?: readonly ProcessingStage[];
 }) => {
   const { t } = useTranslation();
-  const current = PROCESSING_STAGES.indexOf(stage);
+  const current = stages.indexOf(stage);
   const overall =
     stage === 'uploading' && uploadProgress !== undefined
-      ? uploadProgress / PROCESSING_STAGES.length
-      : (current + 0.5) / PROCESSING_STAGES.length;
+      ? uploadProgress / stages.length
+      : (current + 0.5) / stages.length;
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -26,7 +30,7 @@ export const ProcessingSteps = ({
         {t(`processing.stages.${stage}`)}
       </p>
       <ol className="flex flex-col gap-2">
-        {PROCESSING_STAGES.map((s, i) => {
+        {stages.map((s, i) => {
           const done = i < current;
           const active = i === current;
           return (

@@ -2,10 +2,10 @@ import { CheckCircle2, FileText, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ACCEPT_ATTRIBUTE, MAX_FILE_SIZE_MB, SUPPORTED_TYPE_LABELS } from '@/entities/document';
+import { ProcessingSteps } from '@/entities/article';
 import { buildReaderPath } from '@/shared/config';
 import { Button, buttonVariants, ErrorState, FileDropzone } from '@/shared/ui';
 import { useUploadDocument, type UploadState } from '../model/use-upload-document';
-import { ProcessingSteps } from './processing-steps';
 
 const formatSize = (bytes: number) =>
   bytes < 1024 * 1024 ? `${Math.ceil(bytes / 1024)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;

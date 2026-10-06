@@ -3,6 +3,7 @@ import {
   articleSchema,
   articleSummarySchema,
   articleVersionSchema,
+  exerciseSetSchema,
   processingJobSchema,
   translationSchema,
   vocabularyItemSchema,
@@ -27,6 +28,13 @@ export const createHttpApis = (
       form.append('file', file);
       return http.upload('/articles/upload', form, { schema: processingJobSchema, ...options });
     },
+    importText: (input, signal) =>
+      http.request('/articles/import', {
+        method: 'POST',
+        body: input,
+        schema: processingJobSchema,
+        signal,
+      }),
     getProcessingJob: (jobId, signal) =>
       http.request(`/jobs/${jobId}`, { schema: processingJobSchema, signal }),
     updateArticle: (id, patch) =>
@@ -42,6 +50,12 @@ export const createHttpApis = (
         method: 'POST',
         body: { type: 'simplified', level },
         schema: articleVersionSchema,
+      }),
+    generateExercises: (articleId, level) =>
+      http.request(`/articles/${articleId}/exercises`, {
+        method: 'POST',
+        body: { level },
+        schema: exerciseSetSchema,
       }),
     translateText: (text, target, signal, context) =>
       http.request('/translate', {

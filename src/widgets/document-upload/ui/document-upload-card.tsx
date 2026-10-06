@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { UploadDocument } from '@/features/upload-document';
+import { DocumentImport } from './document-import';
 
 export const DocumentUploadCard = () => {
   const { t } = useTranslation();
@@ -8,7 +8,7 @@ export const DocumentUploadCard = () => {
       <h2 id="upload-heading" className="text-lg font-semibold">
         {t('upload.title')}
       </h2>
-      <UploadDocument />
+      <DocumentImport />
     </section>
   );
 };

@@ -32,6 +32,15 @@ By default the app is fully serverless:
 
 No environment variables are required. Build: `npm run build`, output: `dist`. `vercel.json` sends every route to the app. Optional: `VITE_API_URL` to switch to your own backend later. Never add AI provider keys as `VITE_*` variables: they are shipped to the browser.
 
+## Reading exercises (corpus-based reading)
+
+Built for teaching reading with authentic texts, e.g. passages from the [BNC](https://www.english-corpora.org/bnc/) or [COCA](https://www.english-corpora.org/coca/) corpora. Those corpora have natural texts but no CEFR levels and no tasks; the app adds both.
+
+- **Paste text** (Upload → _Paste text_): paste a passage, optionally add a title and its source (BNC/COCA/other), and pick a reading level (A2 by default). The text is simplified to that level and, optionally, exercises are created right away.
+- **Exercises** (reader → _Exercises_): for any document and any level, the AI writes five multiple-choice questions, five gap-filling sentences, five term–definition matches, and three open questions with sample answers. Tasks are based on that level's version of the text, or on the original if that version doesn't exist yet.
+- Learners answer the tasks in the app. Multiple choice, gaps and matching are graded automatically: gap answers ignore case, spacing and punctuation. Open questions are checked by the learner against the sample answer. _New exercises_ replaces the set for that level.
+- Exercises are saved with the document (one set per level), so they work offline.
+
 ## Architecture (Feature-Sliced Design)
 
 ```

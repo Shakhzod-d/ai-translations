@@ -1,6 +1,6 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { articleKeys } from '@/entities/article';
+import { articleKeys, useProcessingJob } from '@/entities/article';
 import { validateFiles, type FileValidationError } from '@/entities/document';
 import {
   articlesApi,
@@ -28,24 +28,13 @@ export type UploadState =
   | { status: 'error'; file: File; code: ApiErrorCode }
   | { status: 'processingFailed'; file: File; code: ProcessingFailure };
 
-const POLL_INTERVAL_MS = 600;
-
 export const useUploadDocument = () => {
   const queryClient = useQueryClient();
   const [phase, setPhase] = useState<Phase>({ status: 'idle' });
   const abortRef = useRef<AbortController | null>(null);
   const jobId = phase.status === 'processing' ? phase.jobId : null;
 
-  const job = useQuery({
-    queryKey: articleKeys.job(jobId ?? ''),
-    queryFn: ({ signal }) => articlesApi.getProcessingJob(jobId!, signal),
-    enabled: !!jobId,
-    refetchInterval: (query) =>
-      query.state.data?.status === 'processing' ? POLL_INTERVAL_MS : false,
-    // Keep polling when the tab is hidden, so progress is current when the user comes back.
-    refetchIntervalInBackground: true,
-    retry: 2,
-  });
+  const job = useProcessingJob(jobId);
 
   const completedId = job.data?.status === 'completed' ? job.data.articleId : null;
   useEffect(() => {
