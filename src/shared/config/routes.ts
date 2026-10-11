@@ -3,6 +3,7 @@ export const ROUTES = {
   documents: '/documents',
   reader: '/reader/:articleId',
   vocabulary: '/vocabulary',
+  frequency: '/frequency',
   settings: '/settings',
 } as const;
 

@@ -33,3 +33,5 @@ export {
   type AiProvider,
 } from './ai/ai-settings';
 export { verifyApiKey } from './ai/run-structured';
+export { translateWordList, type WordTranslations } from './ai/word-translations';
+export { extractText, ExtractionError } from './extraction/extract';
