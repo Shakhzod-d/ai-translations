@@ -20,6 +20,7 @@
     "home": "Home",
     "documents": "Documents",
     "vocabulary": "Vocabulary",
+    "frequency": "Frequency",
     "settings": "Settings",
     "primary": "Primary navigation",
     "skipToContent": "Skip to content"
@@ -290,5 +291,52 @@
     "showSample": "Show sample answer",
     "score": "{{correct}} of {{total}} correct",
     "scoreHint": "Open questions are checked by you, not scored."
+  },
+  "frequency": {
+    "title": "Word frequency",
+    "subtitle": "Build a frequency table from a text (e.g. a Swahili corpus) and translate it into English, Uzbek and Russian.",
+    "dropTitle": "Drop a document to analyze",
+    "dropActive": "Drop to analyze",
+    "browse": "Choose file",
+    "or": "or",
+    "hint": "{{types}} · up to {{size}} MB",
+    "pasteLabel": "Or paste text",
+    "pastePlaceholder": "Paste the text here…",
+    "analyze": "Build table",
+    "reading": "Reading file…",
+    "source": "Source",
+    "pasted": "Pasted text",
+    "newText": "New text",
+    "stats": {
+      "tokens": "Word tokens",
+      "unique": "Unique words",
+      "shown": "In table"
+    },
+    "options": {
+      "label": "Table options",
+      "minLength": "Min. letters",
+      "top": "Show",
+      "all": "All",
+      "stopwords": "Hide Swahili function words",
+      "search": "Search words"
+    },
+    "table": {
+      "caption": "Word frequency table",
+      "rank": "#",
+      "word": "Word",
+      "count": "Count",
+      "percent": "%",
+      "empty": "No words match these options."
+    },
+    "translate": "Translate {{count}} words",
+    "translateDone": "All translated",
+    "translating": "Translating… {{done}} / {{total}}",
+    "stop": "Stop",
+    "translated": "Translations added",
+    "exportCsv": "Download CSV",
+    "errors": {
+      "EXTRACTION_FAILED": "We couldn't read text from this file. It may be scanned, protected or damaged.",
+      "EMPTY_DOCUMENT": "This document doesn't contain any readable text."
+    }
   }
 }

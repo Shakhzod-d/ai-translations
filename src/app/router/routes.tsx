@@ -1,5 +1,6 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 import { DocumentsPage } from '@/pages/documents';
+import { FrequencyPage } from '@/pages/frequency';
 import { HomePage } from '@/pages/home';
 import { NotFoundPage } from '@/pages/not-found';
 import { ReaderPage } from '@/pages/reader';
@@ -17,6 +18,7 @@ export const routes: RouteObject[] = [
       { path: ROUTES.documents, element: <DocumentsPage /> },
       { path: ROUTES.reader, element: <ReaderPage /> },
       { path: ROUTES.vocabulary, element: <VocabularyPage /> },
+      { path: ROUTES.frequency, element: <FrequencyPage /> },
       { path: ROUTES.settings, element: <SettingsPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],

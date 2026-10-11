@@ -20,6 +20,7 @@
     "home": "Bosh sahifa",
     "documents": "Hujjatlar",
     "vocabulary": "Lugʻat",
+    "frequency": "Chastota",
     "settings": "Sozlamalar",
     "primary": "Asosiy navigatsiya",
     "skipToContent": "Asosiy qismga oʻtish"
@@ -290,5 +291,52 @@
     "showSample": "Namunaviy javobni koʻrsatish",
     "score": "{{total}} tadan {{correct}} tasi toʻgʻri",
     "scoreHint": "Ochiq savollarni oʻzingiz tekshirasiz, ular baholanmaydi."
+  },
+  "frequency": {
+    "title": "Soʻz chastotasi",
+    "subtitle": "Matndan (masalan, suaxili korpusi) chastota jadvalini tuzing va uni ingliz, oʻzbek va rus tillariga tarjima qiling.",
+    "dropTitle": "Tahlil uchun hujjatni shu yerga tashlang",
+    "dropActive": "Tahlil uchun qoʻyib yuboring",
+    "browse": "Fayl tanlash",
+    "or": "yoki",
+    "hint": "{{types}} · {{size}} MB gacha",
+    "pasteLabel": "Yoki matnni joylashtiring",
+    "pastePlaceholder": "Matnni shu yerga joylashtiring…",
+    "analyze": "Jadval tuzish",
+    "reading": "Fayl oʻqilmoqda…",
+    "source": "Manba",
+    "pasted": "Joylashtirilgan matn",
+    "newText": "Yangi matn",
+    "stats": {
+      "tokens": "Soʻz qoʻllanishlari",
+      "unique": "Noyob soʻzlar",
+      "shown": "Jadvalda"
+    },
+    "options": {
+      "label": "Jadval sozlamalari",
+      "minLength": "Min. harf",
+      "top": "Koʻrsatish",
+      "all": "Hammasi",
+      "stopwords": "Suaxili yordamchi soʻzlarini yashirish",
+      "search": "Soʻz qidirish"
+    },
+    "table": {
+      "caption": "Soʻz chastotasi jadvali",
+      "rank": "№",
+      "word": "Soʻz",
+      "count": "Soni",
+      "percent": "%",
+      "empty": "Bu sozlamalarga mos soʻz yoʻq."
+    },
+    "translate": "{{count}} ta soʻzni tarjima qilish",
+    "translateDone": "Hammasi tarjima qilindi",
+    "translating": "Tarjima qilinmoqda… {{done}} / {{total}}",
+    "stop": "Toʻxtatish",
+    "translated": "Tarjimalar qoʻshildi",
+    "exportCsv": "CSV yuklab olish",
+    "errors": {
+      "EXTRACTION_FAILED": "Bu fayldan matnni oʻqib boʻlmadi. U skanerlangan, himoyalangan yoki buzilgan boʻlishi mumkin.",
+      "EMPTY_DOCUMENT": "Bu hujjatda oʻqiladigan matn yoʻq."
+    }
   }
 }
