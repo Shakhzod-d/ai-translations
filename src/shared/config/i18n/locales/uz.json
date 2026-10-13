@@ -293,6 +293,7 @@
     "scoreHint": "Ochiq savollarni oʻzingiz tekshirasiz, ular baholanmaydi."
   },
   "frequency": {
+    "tab": "Soʻzlar",
     "title": "Soʻz chastotasi",
     "subtitle": "Matndan (masalan, suaxili korpusi) chastota jadvalini tuzing va uni ingliz, oʻzbek va rus tillariga tarjima qiling.",
     "dropTitle": "Tahlil uchun hujjatni shu yerga tashlang",

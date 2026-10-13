@@ -35,11 +35,23 @@ const download = (fileName: string, content: string) => {
   URL.revokeObjectURL(url);
 };
 
-/** Word-frequency table for a corpus text, with AI glosses in English, Uzbek and Russian. */
-export const WordFrequency = () => {
+/**
+ * Word-frequency table for a corpus text, with AI glosses in English, Uzbek and Russian.
+ * With `text` the table is built for that text right away (e.g. an uploaded document);
+ * without it the user uploads or pastes a text first.
+ */
+export const WordFrequency = ({
+  text: fixedSource,
+  lang = 'sw',
+}: {
+  text?: FrequencySourceText;
+  /** Language of the text, used for pronunciation. Pasted corpora default to Swahili. */
+  lang?: string;
+} = {}) => {
   const { t, i18n } = useTranslation();
   const aiReady = useIsAiConfigured();
-  const [source, setSource] = useState<FrequencySourceText | null>(null);
+  const [pickedSource, setSource] = useState<FrequencySourceText | null>(null);
+  const source = fixedSource ?? pickedSource;
   const [minLength, setMinLength] = useState('1');
   const [top, setTop] = useState<Top>('100');
   const [hideStopwords, setHideStopwords] = useState(false);
@@ -47,14 +59,16 @@ export const WordFrequency = () => {
   const query = useDeferredValue(search.trim().toLocaleLowerCase());
   const { translations, status, translate, stop, reset } = useWordTranslations();
 
+  const sourceText = source?.text;
   const frequency = useMemo(
     () =>
-      source &&
-      computeWordFrequency(source.text, {
-        minLength: Number(minLength),
-        exclude: hideStopwords ? SWAHILI_STOPWORDS : undefined,
-      }),
-    [source, minLength, hideStopwords],
+      sourceText !== undefined
+        ? computeWordFrequency(sourceText, {
+            minLength: Number(minLength),
+            exclude: hideStopwords ? SWAHILI_STOPWORDS : undefined,
+          })
+        : null,
+    [sourceText, minLength, hideStopwords],
   );
 
   const tableRows = useMemo(
@@ -107,17 +121,19 @@ export const WordFrequency = () => {
           <span className="text-muted-foreground">{t('frequency.source')}:</span>
           <span className="truncate font-medium">{source.name}</span>
         </p>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            reset();
-            setSource(null);
-            setSearch('');
-          }}
-        >
-          <RotateCcw aria-hidden /> {t('frequency.newText')}
-        </Button>
+        {!fixedSource && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              reset();
+              setSource(null);
+              setSearch('');
+            }}
+          >
+            <RotateCcw aria-hidden /> {t('frequency.newText')}
+          </Button>
+        )}
       </div>
 
       <dl className="grid grid-cols-3 gap-2 sm:gap-4">
@@ -205,7 +221,12 @@ export const WordFrequency = () => {
       )}
 
       {visibleRows.length ? (
-        <FrequencyTable rows={visibleRows} translations={translations} pending={running} />
+        <FrequencyTable
+          rows={visibleRows}
+          translations={translations}
+          pending={running}
+          lang={lang}
+        />
       ) : (
         <EmptyState title={t('frequency.table.empty')} />
       )}
