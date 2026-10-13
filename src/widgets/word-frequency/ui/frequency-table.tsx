@@ -1,15 +1,33 @@
+import { Volume2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { WordTranslations } from '@/shared/api';
 import { LANGUAGE_NATIVE_NAMES, SUPPORTED_LANGUAGES } from '@/shared/config';
-import type { WordFrequency } from '@/shared/lib';
-import { Skeleton } from '@/shared/ui';
+import { speech, type WordFrequency } from '@/shared/lib';
+import { IconButton, Skeleton } from '@/shared/ui';
 
 interface FrequencyTableProps {
   rows: WordFrequency[];
   translations: Map<string, WordTranslations>;
   /** Words currently being translated show a placeholder instead of a dash. */
   pending: boolean;
+  /** Language of the words, for markup and pronunciation. */
+  lang: string;
 }
+
+const SpeakButton = ({ word, lang }: { word: string; lang: string }) => {
+  const { t } = useTranslation();
+  const supported = speech.isSupported();
+  return (
+    <IconButton
+      size="icon-sm"
+      label={supported ? `${t('learning.listen')}: ${word}` : t('learning.listenUnavailable')}
+      icon={<Volume2 aria-hidden />}
+      disabled={!supported}
+      onClick={() => speech.speak(word, lang)}
+      className="text-muted-foreground hover:text-foreground shrink-0"
+    />
+  );
+};
 
 const formatPercent = (value: number, locale: string) =>
   value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -24,7 +42,7 @@ const Gloss = ({ value, pending }: { value?: string; pending: boolean }) =>
   );
 
 /** A real table from `md` up; stacked cards on phones, where seven columns can't fit. */
-export const FrequencyTable = ({ rows, translations, pending }: FrequencyTableProps) => {
+export const FrequencyTable = ({ rows, translations, pending, lang }: FrequencyTableProps) => {
   const { t, i18n } = useTranslation();
   const hasTranslations = translations.size > 0 || pending;
 
@@ -63,8 +81,11 @@ export const FrequencyTable = ({ rows, translations, pending }: FrequencyTablePr
                   <td className="text-muted-foreground px-3 py-2 text-right tabular-nums">
                     {row.rank}
                   </td>
-                  <th scope="row" className="px-3 py-2 text-left font-medium" lang="sw">
-                    {row.word}
+                  <th scope="row" className="px-3 py-1 text-left font-medium">
+                    <span className="flex items-center gap-1">
+                      <span lang={lang}>{row.word}</span>
+                      <SpeakButton word={row.word} lang={lang} />
+                    </span>
                   </th>
                   <td className="px-3 py-2 text-right tabular-nums">
                     {row.count.toLocaleString(i18n.language)}
@@ -90,12 +111,15 @@ export const FrequencyTable = ({ rows, translations, pending }: FrequencyTablePr
           const tr = translations.get(row.word);
           return (
             <li key={row.word} className="border-border bg-card rounded-xl border p-3">
-              <div className="flex items-baseline gap-3">
+              <div className="flex items-center gap-3">
                 <span className="text-muted-foreground w-8 shrink-0 text-right text-xs tabular-nums">
                   {row.rank}
                 </span>
-                <span className="min-w-0 flex-1 truncate font-medium" lang="sw">
-                  {row.word}
+                <span className="flex min-w-0 flex-1 items-center gap-1">
+                  <span className="truncate font-medium" lang={lang}>
+                    {row.word}
+                  </span>
+                  <SpeakButton word={row.word} lang={lang} />
                 </span>
                 <span className="text-sm font-semibold tabular-nums">
                   {row.count.toLocaleString(i18n.language)}

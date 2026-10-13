@@ -114,4 +114,16 @@ describe('ReaderPage exercises', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(screen.getByRole('textbox', { name: 'Gap 1' })).toHaveValue('');
   });
+
+  it('shows the word frequency list for the document without another upload', async () => {
+    await renderReader();
+    await userEvent.click(await screen.findByRole('radio', { name: 'Frequency' }));
+    expect(screen.getByRole('radio', { name: 'Frequency' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(screen.queryByText('Drop a document to analyze')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /new text/i })).not.toBeInTheDocument();
+    expect(await screen.findAllByText('unprecedented')).not.toHaveLength(0);
+  });
 });

@@ -293,6 +293,7 @@
     "scoreHint": "Open questions are checked by you, not scored."
   },
   "frequency": {
+    "tab": "Words",
     "title": "Word frequency",
     "subtitle": "Build a frequency table from a text (e.g. a Swahili corpus) and translate it into English, Uzbek and Russian.",
     "dropTitle": "Drop a document to analyze",

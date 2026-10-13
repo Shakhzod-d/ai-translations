@@ -8,7 +8,7 @@ import { useMarkDocumentOpened } from '@/features/manage-document';
 import { useSelectionStore } from '@/features/select-text';
 import { toApiError } from '@/shared/api';
 import { CEFR_LEVELS, ROUTES, type CefrLevel } from '@/shared/config';
-import { BookOpen, ListChecks } from 'lucide-react';
+import { BarChart3, BookOpen, ListChecks } from 'lucide-react';
 import { buttonVariants, EmptyState, QueryErrorState, SegmentedControl } from '@/shared/ui';
 import { ArticleHeader } from '@/widgets/article-header';
 import { ArticleNavigation } from '@/widgets/article-navigation';
@@ -16,13 +16,16 @@ import { ArticleExercises } from '@/widgets/article-exercises';
 import { ArticleReader } from '@/widgets/article-reader';
 import { ArticleVersionSelector } from '@/widgets/article-version-selector';
 import { AdaptiveLearningPanel } from '@/widgets/learning-panel';
+import { WordFrequency } from '@/widgets/word-frequency';
 
 const VERSION_PARAM = 'v';
 const COMPARE_PARAM = 'compare';
 const MODE_PARAM = 'mode';
 const EXERCISE_LEVEL_PARAM = 'xl';
 
-type ReaderMode = 'read' | 'exercises';
+type ReaderMode = 'read' | 'exercises' | 'frequency';
+const isMode = (value: string | null): value is ReaderMode =>
+  value === 'read' || value === 'exercises' || value === 'frequency';
 const isLevel = (value: string | null): value is CefrLevel =>
   (CEFR_LEVELS as readonly (string | null)[]).includes(value);
 
@@ -74,7 +77,8 @@ const ReaderPage = () => {
   const slots = buildVersionSlots(article.versions);
   const slot = findSlot(slots, params.get(VERSION_PARAM));
   const compare = params.get(COMPARE_PARAM) === '1';
-  const mode: ReaderMode = params.get(MODE_PARAM) === 'exercises' ? 'exercises' : 'read';
+  const requestedMode = params.get(MODE_PARAM);
+  const mode: ReaderMode = isMode(requestedMode) ? requestedMode : 'read';
   const requestedLevel = params.get(EXERCISE_LEVEL_PARAM);
   // Default to the level being read, else a level that already has exercises.
   const exerciseLevel = isLevel(requestedLevel)
@@ -98,10 +102,31 @@ const ReaderPage = () => {
       options={[
         { value: 'read', label: t('exercises.readTab'), icon: <BookOpen aria-hidden /> },
         { value: 'exercises', label: t('exercises.tab'), icon: <ListChecks aria-hidden /> },
+        { value: 'frequency', label: t('nav.frequency'), icon: <BarChart3 aria-hidden /> },
       ]}
       className="w-full sm:w-fit"
     />
   );
+
+  if (mode === 'frequency') {
+    const original = article.versions.find((v) => v.type === 'original') ?? article.versions[0];
+    const text = original?.content.paragraphs.map((p) => p.text).join('\n\n') ?? '';
+    return shell(
+      <div className="mx-auto flex max-w-5xl flex-col gap-8">
+        <ArticleHeader
+          article={article}
+          compare={false}
+          canCompare={false}
+          showHint={false}
+          onCompareChange={() => undefined}
+        >
+          {modeSwitch}
+        </ArticleHeader>
+        <AiSetupBanner />
+        <WordFrequency text={{ text, name: article.title }} lang={original?.language ?? 'en'} />
+      </div>,
+    );
+  }
 
   if (mode === 'exercises') {
     return shell(
